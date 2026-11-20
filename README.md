@@ -14,7 +14,7 @@ Egg **exclusivo para Proton** em Pelican/Pterodactyl. Ele instala e executa o se
 
 ## Arquivo
 
-Use [`egg-palworld-proton-modded-v2-performance-reviewed.json`](./egg-palworld-proton-modded-v2-performance-reviewed.json) para importar no painel. O ambiente esperado é a imagem Proton `ghcr.io/parkervcp/steamcmd:proton`. Esta cópia pública usa o nome do autor e contém a senha inicial intermediária `PalAdm2026`; altere-a antes de colocar o servidor em produção.
+Use [`egg-palworld-proton-modded.json`](./egg-palworld-proton-modded.json) para importar no painel. O ambiente esperado é a imagem Proton `ghcr.io/parkervcp/steamcmd:proton`. Esta cópia pública usa o nome do autor e contém a senha inicial intermediária `PalAdm2026`; altere-a antes de colocar o servidor em produção.
 
 ## Ajustes mais importantes
 
