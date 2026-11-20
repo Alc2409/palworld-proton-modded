@@ -1,0 +1,1203 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL",
+    "meta": {
+        "version": "PLCN_v3",
+        "update_url": "https://github.com/Alc2409/palworld-proton-modded-v2-egg"
+    },
+    "exported_at": "2026-11-20T02:41:19+00:00",
+    "name": "Palworld Proton Modded V2 - 60FPS",
+    "author": "redacted-for-public-release",
+    "uuid": "7bcea6e4-a2bd-452d-bf1d-5f519faf5f1d",
+    "description": "Fight, farm, build and work alongside mysterious creatures called \"Pals\" in this completely new multiplayer, open world survival and crafting game! Revisado para publicação pública: senha administrativa deve ser definida pelo painel.",
+    "icon": null,
+    "tags": [],
+    "features": [
+        "steam_disk_space"
+    ],
+    "docker_images": {
+        "Proton": "ghcr.io/parkervcp/steamcmd:proton"
+    },
+    "file_denylist": [],
+    "startup_commands": {
+        "Default": "./PalworldServerConfigParser; mkdir -p Pal/Saved/Config/WindowsServer && echo -e \"[/Script/OnlineSubsystemUtils.IpNetDriver]\\nNetServerMaxTickRate=60\\nLanServerMaxTickRate=60\\n\\n[/Script/Engine.Engine]\\nNetClientTicksPerSecond=60\\n\\n[/Script/Engine.GarbageCollectionSettings]\\ngc.TimeBetweenPurgingPendingKillObjects=30\\ngc.NumRetriesBeforeForcingGC=2\\ngc.MinFlushTime=1.0\" > Pal/Saved/Config/WindowsServer/Engine.ini; export RESTAPI_PORT={{REST_API_PORT}} ADMIN_PASSWORD={{ADMIN_PASSWORD}} WINEDLLOVERRIDES=\"dwmapi=n,b\"; (while read cmd; do ./palcon \"$cmd\"; done) < /dev/stdin & cd /home/container/Pal/Binaries/Win64 && proton run ./PalServer-Win64-Shipping.exe -publiclobby -useperfthreads -NoAsyncLoadingThread -UseMultithreadForDS -port={{SERVER_PORT}} -publicport={{SERVER_PORT}} -servername=\"{{SERVER_NAME}}\" -players={{MAX_PLAYERS}} $(if [ -n \"$SERVER_PASSWORD\" ]; then echo \"-serverpassword=\\\"${SERVER_PASSWORD}\\\"\"; fi) -adminpassword=\"{{ADMIN_PASSWORD}}\" -rcon -enable-gamedata-api"
+    },
+    "config": {
+        "files": "{}",
+        "startup": "{\n    \"done\": [\n        \"listening\",\n        \"running\"\n    ]\n}",
+        "logs": "{}",
+        "stop": "shutdown 10 \"Server restarting in 10 seconds.\""
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\r\n# steamcmd Base Installation Script\r\n#\r\n# Server Files: /mnt/server\r\n# Image to install with is 'ghcr.io/parkervcp/installers:debian'\r\n\r\n\r\n# Install packages. Default packages below are not required if using our existing install image thus speeding up the install process.\r\n#apt -y update\r\n#apt -y --no-install-recommends install curl lib32gcc-s1 ca-certificates\r\n\r\n## just in case someone removed the defaults.\r\nif [[ \"${STEAM_USER}\" == \"\" ]] || [[ \"${STEAM_PASS}\" == \"\" ]]; then\r\n    echo -e \"steam user is not set.\\n\"\r\n    echo -e \"Using anonymous user.\\n\"\r\n    STEAM_USER=anonymous\r\n    STEAM_PASS=\"\"\r\n    STEAM_AUTH=\"\"\r\nelse\r\n    echo -e \"user set to ${STEAM_USER}\"\r\nfi\r\n\r\n## download and install steamcmd\r\ncd /tmp\r\nmkdir -p /mnt/server/steamcmd\r\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\r\ntar -xzvf steamcmd.tar.gz -C /mnt/server/steamcmd\r\nmkdir -p /mnt/server/steamapps # Fix steamcmd disk write error when this folder is missing\r\ncd /mnt/server/steamcmd\r\n\r\n# SteamCMD fails otherwise for some reason, even running as root.\r\n# This is changed at the end of the install process anyways.\r\nchown -R root:root /mnt\r\nexport HOME=/mnt/server\r\n\r\n## install game using steamcmd\r\n./steamcmd.sh +force_install_dir /mnt/server +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} $( [[ \"${WINDOWS_INSTALL}\" == \"1\" ]] && printf %s '+@sSteamCmdForcePlatformType windows' ) +app_update ${SRCDS_APPID} $( [[ -z ${SRCDS_BETAID} ]] || printf %s \"-beta ${SRCDS_BETAID}\" ) $( [[ -z ${SRCDS_BETAPASS} ]] || printf %s \"-betapassword ${SRCDS_BETAPASS}\" ) ${INSTALL_FLAGS} validate +quit ## other flags may be needed depending on install. looking at you cs 1.6\r\n\r\n## set up 32 bit libraries\r\nmkdir -p /mnt/server/.steam/sdk32\r\ncp -v linux32/steamclient.so ../.steam/sdk32/steamclient.so\r\n\r\n## set up 64 bit libraries\r\nmkdir -p /mnt/server/.steam/sdk64\r\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\r\n\r\n## add below your custom commands if needed\r\n## copy template config file\r\necho \"Copy template config file into config folder!\"\r\n\r\nif [ -f \"/mnt/server/Pal/Saved/Config/WindowsServer/PalWorldSettings.ini\" ]; then\r\n    echo \"Config file already exitis, backing up and overwriting with a new one\"\r\n    mv /mnt/server/Pal/Saved/Config/WindowsServer/PalWorldSettings.ini /mnt/server/Pal/Saved/Config/WindowsServer/PalWorldSettings_$(date +\"%Y%m%d%H%M%S\").ini\r\n    cp /mnt/server/DefaultPalWorldSettings.ini /mnt/server/Pal/Saved/Config/WindowsServer/PalWorldSettings.ini\r\nelse \r\n    echo \"Creating new config file\"\r\n    mkdir -p /mnt/server/Pal/Saved/Config/WindowsServer\r\n    cp /mnt/server/DefaultPalWorldSettings.ini /mnt/server/Pal/Saved/Config/WindowsServer/PalWorldSettings.ini\r\nfi\r\n\r\ncd /mnt/server\r\n# Download self made replace tool\r\necho \"Downloading config parser aplication\"\r\ncurl -sSL -o PalworldServerConfigParser https://github.com/pelican-eggs/Palworld-Config-Parser-Tool/releases/latest/download/PalworldServerConfigParser-linux-amd64\r\nchmod +x PalworldServerConfigParser\r\n\r\ncd /mnt/server\r\necho \"Downloading palcon cli tool for RESTAPI\"\r\ncurl -sSL -o palcon https://github.com/dkoz/palcon/releases/download/v1.0.1/palcon\r\nchmod +x palcon\r\n\r\ncd /tmp\r\ncurl -sSL -o /mnt/server/Pal/Binaries/Win64/winmm.dll https://raw.githubusercontent.com/pelican-eggs/games-steamcmd/main/palworld/winmm.dll\r\n\r\nsync\r\nsleep 2\r\n\r\n# Okaetsu UE4SS Installation\r\nLATEST_JSON=$(curl -fsSL \"https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/latest\")\r\nMATCH=\"UE4SS-Palworld.zip\"\r\nDOWNLOAD_URL=$(echo \"${LATEST_JSON}\"|jq -r '.assets[]|select(.name==\"'\"${MATCH}\"'\")|.browser_download_url')\r\necho \"${DOWNLOAD_URL}\"\r\ncurl -fsSL -o ue4ss.zip \"${DOWNLOAD_URL}\"\r\nunzip -o ue4ss.zip -d /mnt/server/Pal/Binaries/Win64\r\n\r\n# Zvend PalDefender Installation\r\nif [[ \"${INSTALL_PALDEFENDER}\" == \"True\" ]]; then\r\n    LATEST_JSON=$(curl --silent \"https://api.github.com/repos/Ultimeit/PalDefender/releases/latest\")\r\n    MATCH=\"PalDefender.zip\"\r\n\r\n    DOWNLOAD_URL=$(echo \"${LATEST_JSON}\" | jq .assets | jq -r '.[].browser_download_url' | grep -i \"${MATCH}\")\r\n    echo \"${DOWNLOAD_URL}\"\r\n\r\n    curl -sSL -o paldefender.zip \"${DOWNLOAD_URL}\"\r\n    unzip -o paldefender.zip -d /mnt/server/Pal/Binaries/Win64\r\nfi\r\n\r\n## install end\r\necho \"-----------------------------------------\"\r\necho \"Installation completed...\"\r\necho \"-----------------------------------------\"",
+            "container": "ghcr.io/parkervcp/installers:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "App ID",
+            "description": "Do not edit.",
+            "env_variable": "SRCDS_APPID",
+            "default_value": "2394010",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": [
+                "required",
+                "in:2394010"
+            ],
+            "sort": 85
+        },
+        {
+            "name": "RCON Port",
+            "description": "Managed by Panel.",
+            "env_variable": "RCON_PORT",
+            "default_value": "25575",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": [
+                "required",
+                "numeric"
+            ],
+            "sort": 87
+        },
+        {
+            "name": "REST API Port",
+            "description": "Managed by Panel.",
+            "env_variable": "REST_API_PORT",
+            "default_value": "8212",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": [
+                "required",
+                "numeric"
+            ],
+            "sort": 88
+        },
+        {
+            "name": "Windows Install",
+            "description": "Do not edit.",
+            "env_variable": "WINDOWS_INSTALL",
+            "default_value": "1",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": [
+                "required",
+                "in:1"
+            ],
+            "sort": 86
+        },
+        {
+            "name": "[ Building ] Decay Rate",
+            "description": "Rate at which structures decay outside the Palbox area.",
+            "env_variable": "BUILD_OBJECT_DETERIORATION_DAMAGE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 81
+        },
+        {
+            "name": "[ Building ] Global Block Limit",
+            "description": "Max blocks in the server. 0 = Unlimited.",
+            "env_variable": "MAX_BUILDING_LIMIT_NUM",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "numeric",
+                "between:0,10000"
+            ],
+            "sort": 82
+        },
+        {
+            "name": "[ Building ] Prevent Building Near POI",
+            "description": "Prevents players from building near boss spawns or towers.",
+            "env_variable": "BUILD_AREA_LIMIT",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 83
+        },
+        {
+            "name": "[ Building ] Show Block Owner",
+            "description": "Shows who built the wall when looking at it.",
+            "env_variable": "ENABLE_BUILDING_PLAYER_UID_DISPLAY",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 84
+        },
+        {
+            "name": "[ Building ] Structure Damage Received",
+            "description": "Multiplier for damage dealt to structures.",
+            "env_variable": "BUILD_OBJECT_DAMAGE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 80
+        },
+        {
+            "name": "[ Building ] Structure HP",
+            "description": "Health multiplier for foundations/walls.",
+            "env_variable": "BUILD_OBJECT_HP_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 79
+        },
+        {
+            "name": "[ Guild ] Base Auto Defense",
+            "description": "Pals automatically defend the base if attacked by others.",
+            "env_variable": "ENABLE_DEFENSE_OTHER_GUILD_PLAYER",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 75
+        },
+        {
+            "name": "[ Guild ] Guild Reset Hours",
+            "description": "Time in hours before an inactive guild is deleted (if wipe is enabled).",
+            "env_variable": "AUTO_RESET_GUILD_TIME_NO_ONLINE_PLAYERS",
+            "default_value": "72.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,3}\\.\\d{1,6}$/"
+            ],
+            "sort": 77
+        },
+        {
+            "name": "[ Guild ] Max Bases per Guild",
+            "description": "Total Palboxes/bases the same guild can build.",
+            "env_variable": "BASE_CAMP_MAX_NUM_IN_GUILD",
+            "default_value": "4",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "numeric",
+                "between:1,10"
+            ],
+            "sort": 72
+        },
+        {
+            "name": "[ Guild ] Max Players",
+            "description": "How many players can join a single guild.",
+            "env_variable": "GUILD_PLAYER_MAX_NUM",
+            "default_value": "20",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "numeric",
+                "between:1,100"
+            ],
+            "sort": 74
+        },
+        {
+            "name": "[ Guild ] Transfer Leader (Days)",
+            "description": "Days offline required before another member can take leadership.",
+            "env_variable": "AUTO_TRANSFER_MASTER_THRESHOLD_DAYS",
+            "default_value": "14.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,3}\\.\\d{1,6}$/"
+            ],
+            "sort": 78
+        },
+        {
+            "name": "[ Guild ] Wipe Inactive Guilds",
+            "description": "Deletes guilds with no active players (World cleanup).",
+            "env_variable": "AUTO_RESET_GUILD_NO_ONLINE_PLAYERS",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 76
+        },
+        {
+            "name": "[ Guild ] Workers per Base",
+            "description": "Max working Pals per base (Max 50). Affects lag.",
+            "env_variable": "BASE_CAMP_WORKER_MAX_NUM",
+            "default_value": "15",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "numeric",
+                "between:1,50"
+            ],
+            "sort": 73
+        },
+        {
+            "name": "[ Pals ] Capture Rate",
+            "description": "Multiplier for Pal capture chance (e.g., 2.0 = double chance).",
+            "env_variable": "PAL_CAPTURE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 34
+        },
+        {
+            "name": "[ Pals ] Damage Dealt",
+            "description": "Multiplier for the damage Pals deal.",
+            "env_variable": "PAL_DAMAGE_RATE_ATTACK",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 36
+        },
+        {
+            "name": "[ Pals ] Damage Received",
+            "description": "Multiplier for the damage Pals take.",
+            "env_variable": "PAL_DAMAGE_RATE_DEFENSE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 37
+        },
+        {
+            "name": "[ Pals ] Egg Hatch Time",
+            "description": "Default time in hours for massive eggs to hatch.",
+            "env_variable": "PAL_EGG_DEFAULT_HATCHING_TIME",
+            "default_value": "72.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,3}\\.\\d{1,6}$/"
+            ],
+            "sort": 40
+        },
+        {
+            "name": "[ Pals ] HP Regen (Sleeping)",
+            "description": "Multiplier for Pal healing while in Palbox/Bed.",
+            "env_variable": "PAL_AUTO_HP_REGENE_RATE_IN_SLEEP",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 39
+        },
+        {
+            "name": "[ Pals ] HP Regen Rate",
+            "description": "Multiplier for Pal auto healing over time.",
+            "env_variable": "PAL_AUTO_HP_REGENE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 38
+        },
+        {
+            "name": "[ Pals ] Invasion Raids",
+            "description": "Enables random NPC or Pal attacks on your base.",
+            "env_variable": "ENABLE_INVADER_ENEMY",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 42
+        },
+        {
+            "name": "[ Pals ] Map Bosses",
+            "description": "Enables the generation of giant Predator Boss Pals.",
+            "env_variable": "ENABLE_PREDATOR_BOSS_PAL",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 41
+        },
+        {
+            "name": "[ Pals ] Pal Hunger",
+            "description": "Lower this to make the hunger bar drain slower.",
+            "env_variable": "PAL_STOMACH_DECREACE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 44
+        },
+        {
+            "name": "[ Pals ] Pal Stamina",
+            "description": "Lower this so Pals use less stamina when fighting/flying.",
+            "env_variable": "PAL_STAMINA_DECREACE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 45
+        },
+        {
+            "name": "[ Pals ] Permanent Death",
+            "description": "Hardcore: if your Pal dies, it is lost forever.",
+            "env_variable": "PAL_LOST",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 46
+        },
+        {
+            "name": "[ Pals ] Spawn Amount",
+            "description": "Higher values spawn more Pals (Warning: may cause lag).",
+            "env_variable": "PAL_SPAWN_NUM_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 35
+        },
+        {
+            "name": "[ Pals ] Work Speed",
+            "description": "Multiplies task completion speed for Pals at the base.",
+            "env_variable": "MONSTER_FARM_ACTION_SPEED_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 43
+        },
+        {
+            "name": "[ Player ] Block Respawn Time",
+            "description": "Delay before allowing respawn (seconds).",
+            "env_variable": "BLOCK_RESPAWN_TIME",
+            "default_value": "5.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,3}\\.\\d{1,6}$/"
+            ],
+            "sort": 56
+        },
+        {
+            "name": "[ Player ] Damage Dealt",
+            "description": "Multiplies the damage the PLAYER deals with weapons.",
+            "env_variable": "PLAYER_DAMAGE_RATE_ATTACK",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 47
+        },
+        {
+            "name": "[ Player ] Damage Received",
+            "description": "Multiplies damage the PLAYER takes (Less than 1.0 = tankier).",
+            "env_variable": "PLAYER_DAMAGE_RATE_DEFENSE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 48
+        },
+        {
+            "name": "[ Player ] Enhance Attack",
+            "description": "Allows using souls to upgrade Attack.",
+            "env_variable": "ALLOW_ENHANCE_STAT_ATTACK",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 62
+        },
+        {
+            "name": "[ Player ] Enhance HP",
+            "description": "Allows using souls at the Statue to upgrade Health.",
+            "env_variable": "ALLOW_ENHANCE_STAT_HEALTH",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 60
+        },
+        {
+            "name": "[ Player ] Enhance Stamina",
+            "description": "Allows using souls to upgrade Stamina.",
+            "env_variable": "ALLOW_ENHANCE_STAT_STAMINA",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 63
+        },
+        {
+            "name": "[ Player ] Enhance Weight",
+            "description": "Allows using souls to upgrade carrying capacity.",
+            "env_variable": "ALLOW_ENHANCE_STAT_WEIGHT",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 61
+        },
+        {
+            "name": "[ Player ] Enhance Work Speed",
+            "description": "Allows using souls to upgrade Work Speed.",
+            "env_variable": "ALLOW_ENHANCE_STAT_WORKSPEED",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 64
+        },
+        {
+            "name": "[ Player ] Equipment Durability",
+            "description": "Multiplier for tools/armor breaking (Lower = lasts longer).",
+            "env_variable": "EQUIPMENT_DURABILITY_DAMAGE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 54
+        },
+        {
+            "name": "[ Player ] Exist After Logout",
+            "description": "If true, player bodies remain in the world when offline.",
+            "env_variable": "EXIST_PLAYER_AFTER_LOGOUT",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 55
+        },
+        {
+            "name": "[ Player ] HP Regen (Sleeping)",
+            "description": "Multiplier for Player healing while in a bed.",
+            "env_variable": "PLAYER_AUTO_HP_REGENE_RATE_IN_SLEEP",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 50
+        },
+        {
+            "name": "[ Player ] HP Regen Rate",
+            "description": "Multiplier for Player auto healing over time.",
+            "env_variable": "PLAYER_AUTO_HP_REGENE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 49
+        },
+        {
+            "name": "[ Player ] Hardcore Mode",
+            "description": "If true, character is deleted upon death.",
+            "env_variable": "HARDCORE",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 58
+        },
+        {
+            "name": "[ Player ] Manual Work Speed",
+            "description": "Multiplier for player crafting speed.",
+            "env_variable": "WORK_SPEED_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 53
+        },
+        {
+            "name": "[ Player ] Player Hunger",
+            "description": "Lower this to take longer to feel hungry.",
+            "env_variable": "PLAYER_STOMACH_DECREACE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 51
+        },
+        {
+            "name": "[ Player ] Player Stamina",
+            "description": "Lower this to use less stamina when running/jumping.",
+            "env_variable": "PLAYER_STAMINA_DECREACE_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 52
+        },
+        {
+            "name": "[ Player ] Recreate in Hardcore",
+            "description": "Allows recreating character in the same guild if dead in Hardcore.",
+            "env_variable": "CHARACTER_RECREATE_IN_HARDCORE",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 59
+        },
+        {
+            "name": "[ Player ] Respawn Penalty Scale",
+            "description": "Multiplies respawn timer on repeated deaths.",
+            "env_variable": "RESPAWN_PENALTY_TIME_SCALE",
+            "default_value": "2.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 57
+        },
+        {
+            "name": "[ PvP ] Enable PvP",
+            "description": "Players can attack players from other guilds.",
+            "env_variable": "ENABLE_PLAYER_TO_PLAYER_DAMAGE",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 65
+        },
+        {
+            "name": "[ PvP ] Friendly Fire",
+            "description": "If true, you deal damage to your own Pals and friends.",
+            "env_variable": "ENABLE_FRIENDLY_FIRE",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 66
+        },
+        {
+            "name": "[ PvP ] PvP Bonus Amount",
+            "description": "How many items to drop on a PvP kill.",
+            "env_variable": "ADDITIONAL_DROP_ITEM_NUM_WHEN_PLAYER_KILLING_IN_PVP_MODE",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "numeric",
+                "between:0,100"
+            ],
+            "sort": 71
+        },
+        {
+            "name": "[ PvP ] PvP Bonus Item ID",
+            "description": "Internal item name for the reward system above.",
+            "env_variable": "ADDITIONAL_DROP_ITEM_WHEN_PLAYER_KILLING_IN_PVP_MODE",
+            "default_value": "PlayerDropItem",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "nullable",
+                "string",
+                "max:64",
+                "regex:/^[^,]*$/"
+            ],
+            "sort": 70
+        },
+        {
+            "name": "[ PvP ] PvP Kill Bonus Drop",
+            "description": "Reward System: Enables bonus drop on PvP kills.",
+            "env_variable": "ADDITIONAL_DROP_ITEM_WHEN_PLAYER_KILLING_IN_PVP_MODE_ENABLED",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 69
+        },
+        {
+            "name": "[ PvP ] PvP Server Tag",
+            "description": "Adds the PvP tag in the official list to attract players.",
+            "env_variable": "IS_PVP",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 67
+        },
+        {
+            "name": "[ PvP ] Steal Enemy Drops",
+            "description": "Allows opening the death bag of another player.",
+            "env_variable": "CAN_PICKUP_OTHER_GUILD_DEATH_PENALTY_DROP",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 68
+        },
+        {
+            "name": "[ Server ] Admin Password",
+            "description": "Senha usada para comandos administrativos e ferramentas RCON. Defina uma senha forte no painel; não deixe vazia em produção.",
+            "env_variable": "ADMIN_PASSWORD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "alpha_dash",
+                "between:4,30"
+            ],
+            "sort": 8
+        },
+        {
+            "name": "[ Server ] Auto Save (Minutes)",
+            "description": "Time interval between world saves. Default is 30.",
+            "env_variable": "AUTO_SAVE_SPAN",
+            "default_value": "30.000000",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,3}\\.\\d{1,6}$/"
+            ],
+            "sort": 10
+        },
+        {
+            "name": "[ Server ] Description",
+            "description": "Message or rules displayed on the server screen.",
+            "env_variable": "SERVER_DESCRIPTION",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "nullable",
+                "string",
+                "max:128",
+                "regex:/^[^,]*$/"
+            ],
+            "sort": 11
+        },
+        {
+            "name": "[ Server ] Max Players",
+            "description": "Maximum concurrent players (Recommended 32).",
+            "env_variable": "MAX_PLAYERS",
+            "default_value": "32",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": [
+                "required",
+                "numeric",
+                "between:1,100"
+            ],
+            "sort": 9
+        },
+        {
+            "name": "[ Server ] Public IP",
+            "description": "Leave empty unless using complex external network configs.",
+            "env_variable": "PUBLIC_IP",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": [
+                "nullable",
+                "ip"
+            ],
+            "sort": 12
+        },
+        {
+            "name": "[ Server ] Server Name",
+            "description": "Name that will appear on the server list.",
+            "env_variable": "SERVER_NAME",
+            "default_value": "Optimized Palworld Server",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string",
+                "max:64",
+                "regex:/^[^,]*$/"
+            ],
+            "sort": 6
+        },
+        {
+            "name": "[ Server ] Server Password",
+            "description": "Password to join the server. Leave blank for public.",
+            "env_variable": "SERVER_PASSWORD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "nullable",
+                "alpha_dash",
+                "max:30"
+            ],
+            "sort": 7
+        },
+        {
+            "name": "[ Server ] Show Join/Leave Message",
+            "description": "Shows messages in chat when players join or disconnect.",
+            "env_variable": "IS_SHOW_JOIN_LEFT_MESSAGE",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 13
+        },
+        {
+            "name": "[ System ] Allow Client Mods",
+            "description": "Allows players with client-side mods to join (Recommended).",
+            "env_variable": "ALLOW_CLIENT_MOD",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 4
+        },
+        {
+            "name": "[ System ] Enable RCON",
+            "description": "Enables RCON tool support (Web Panel console).",
+            "env_variable": "RCON_ENABLE",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 2
+        },
+        {
+            "name": "[ System ] Enable REST API",
+            "description": "Keeps the console working via advanced REST system.",
+            "env_variable": "REST_API_ENABLED",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 3
+        },
+        {
+            "name": "[ System ] Extra Flags",
+            "description": "Core flags needed for the API and Gamedata to work. Do not remove.",
+            "env_variable": "EXTRA_FLAGS",
+            "default_value": "-enable-gamedata-api -collect-gamedata-interval=60",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": [
+                "nullable",
+                "string",
+                "max:256",
+                "regex:/^[^,]*$/"
+            ],
+            "sort": 5
+        },
+        {
+            "name": "[ System ] Install PalDefender",
+            "description": "Toggles the download of the Anti-Cheat system.",
+            "env_variable": "INSTALL_PALDEFENDER",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 1
+        },
+        {
+            "name": "[ World ] Choose Spawn on Map",
+            "description": "If true, new players can choose where to spawn.",
+            "env_variable": "IS_START_LOCATION_SELECT_BY_MAP",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 30
+        },
+        {
+            "name": "[ World ] Day Speed",
+            "description": "Higher than 1.0 = Day passes faster.",
+            "env_variable": "DAY_TIME_SPEED_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 21
+        },
+        {
+            "name": "[ World ] Death Penalty",
+            "description": "What happens on death? None, Item, ItemAndEquipment, All.",
+            "env_variable": "DEATH_PENALTY",
+            "default_value": "Item",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:None,Item,ItemAndEquipment,All"
+            ],
+            "sort": 16
+        },
+        {
+            "name": "[ World ] Difficulty",
+            "description": "Overall difficulty (None, Normal, Hard).",
+            "env_variable": "DIFFICULTY",
+            "default_value": "None",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:None,Normal,Hard"
+            ],
+            "sort": 14
+        },
+        {
+            "name": "[ World ] Drop Rate (Enemies)",
+            "description": "Loot multiplier when defeating Pals and NPCs.",
+            "env_variable": "ENEMY_DROP_ITEM_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 20
+        },
+        {
+            "name": "[ World ] Drop Rate (Gathering)",
+            "description": "Multiplier when breaking rocks, trees, etc.",
+            "env_variable": "COLLECTION_DROP_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 17
+        },
+        {
+            "name": "[ World ] EXP Multiplier",
+            "description": "Increase to level up faster (e.g., 2.0 = double xp).",
+            "env_variable": "EXP_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 15
+        },
+        {
+            "name": "[ World ] Enable Fast Travel",
+            "description": "Allows using eagle statues to travel.",
+            "env_variable": "ENABLE_FAST_TRAVEL",
+            "default_value": "True",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 28
+        },
+        {
+            "name": "[ World ] Fast Travel Only to Bases",
+            "description": "If true, players can only fast travel to Palboxes.",
+            "env_variable": "ENABLE_FAST_TRAVEL_ONLY_BASE_CAMP",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 29
+        },
+        {
+            "name": "[ World ] Item Despawn (Hours)",
+            "description": "Time in hours for dropped items to disappear.",
+            "env_variable": "DROP_ITEM_ALIVE_MAX_HOURS",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 24
+        },
+        {
+            "name": "[ World ] Item Rot Rate",
+            "description": "Multiplier for food spoiling (Lower = slower rot).",
+            "env_variable": "ITEM_CORRUPTION_MULTIPLIER",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 26
+        },
+        {
+            "name": "[ World ] Item Weight Multiplier",
+            "description": "Lower this value to make items weigh less.",
+            "env_variable": "ITEM_WEIGHT_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 25
+        },
+        {
+            "name": "[ World ] Max Dropped Items",
+            "description": "Max items on the ground (Reduce to avoid memory leaks).",
+            "env_variable": "DROP_ITEM_MAX_NUM",
+            "default_value": "3000",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "numeric",
+                "between:100,10000"
+            ],
+            "sort": 23
+        },
+        {
+            "name": "[ World ] Night Speed",
+            "description": "Higher than 1.0 = Night passes faster.",
+            "env_variable": "NIGHT_TIME_SPEED_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 22
+        },
+        {
+            "name": "[ World ] Randomize Pal Levels",
+            "description": "If true, Pal levels are completely random.",
+            "env_variable": "IS_RANDOMIZER_PAL_LEVEL_RANDOM",
+            "default_value": "False",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:True,False"
+            ],
+            "sort": 33
+        },
+        {
+            "name": "[ World ] Randomizer Seed",
+            "description": "Seed for Randomizer. Leave empty for random.",
+            "env_variable": "RANDOMIZER_SEED",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "nullable",
+                "string",
+                "max:32",
+                "regex:/^[^,]*$/"
+            ],
+            "sort": 32
+        },
+        {
+            "name": "[ World ] Randomizer Type",
+            "description": "Randomize Pal spawns (None, Region, All).",
+            "env_variable": "RANDOMIZER_TYPE",
+            "default_value": "None",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "in:None,Region,All"
+            ],
+            "sort": 31
+        },
+        {
+            "name": "[ World ] Resource Health",
+            "description": "Multiplier for the HP of trees, rocks, etc.",
+            "env_variable": "COLLECTION_OBJECT_HP_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 18
+        },
+        {
+            "name": "[ World ] Resource Respawn Speed",
+            "description": "Multiplier for how fast trees and rocks respawn.",
+            "env_variable": "COLLECTION_OBJECT_RESPAWN_SPEED_RATE",
+            "default_value": "1.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^\\d{1,2}\\.\\d{1,6}$/"
+            ],
+            "sort": 19
+        },
+        {
+            "name": "[ World ] Supply Drop Interval",
+            "description": "Time in minutes between Airdrops.",
+            "env_variable": "SUPPLY_DROP_SPAN",
+            "default_value": "180",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "numeric",
+                "between:10,1440"
+            ],
+            "sort": 27
+        }
+    ]
+}
