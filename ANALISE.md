@@ -1,4 +1,4 @@
-# Análise técnica e recomendações — Proton-only
+# Análise técnica — Palworld Proton Modded
 
 ## Veredito
 

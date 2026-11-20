@@ -1,4 +1,4 @@
-# Palworld Proton-Only Modded V2 — Performance
+# Palworld Proton Modded
 
 Egg **exclusivo para Proton** em Pelican/Pterodactyl. Ele instala e executa o servidor dedicado **Windows do Palworld** dentro de um contêiner Linux usando Proton. Não é um egg para execução nativa Linux nem para Windows puro. O arquivo também prepara o `PalWorldSettings.ini`, instala o parser de configuração, habilita integração de console por `palcon`, instala `winmm.dll` para o ambiente modificado e pode instalar o PalDefender opcionalmente.
 

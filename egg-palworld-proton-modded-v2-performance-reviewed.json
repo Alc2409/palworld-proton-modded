@@ -5,7 +5,7 @@
         "update_url": "https://github.com/Alc2409/palworld-proton-modded-v2-egg"
     },
     "exported_at": "2026-11-20T02:41:19+00:00",
-    "name": "Palworld Proton-Only Modded V2 - Performance",
+    "name": "Palworld Proton Modded",
     "author": "Alc2409",
     "uuid": "7bcea6e4-a2bd-452d-bf1d-5f519faf5f1d",
     "description": "Egg exclusivo para executar o servidor dedicado Windows do Palworld em Linux usando Proton, com foco em estabilidade, desempenho e modding. Não é destinado a execução nativa Linux ou Windows puro.",
