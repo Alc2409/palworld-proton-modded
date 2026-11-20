@@ -1,8 +1,8 @@
-# Análise técnica e recomendações
+# Análise técnica e recomendações — Proton-only
 
 ## Veredito
 
-O egg é uma base funcional para hospedar o servidor dedicado do Palworld em Linux quando o objetivo é usar recursos do ecossistema Windows/modding por Proton. Ele reúne muitas variáveis úteis e já automatiza boa parte da instalação. Porém, a cópia original não deveria ser publicada sem tratamento: traz uma senha administrativa padrão (`ChangeMe123`), um e-mail no campo `author`, downloads flutuantes de `releases/latest` e uma opção de anti-cheat que o próprio projeto informa ser exclusiva para servidores Windows.
+O egg é uma base funcional **exclusivamente para hospedar o servidor dedicado Windows do Palworld em Linux via Proton**, quando o objetivo é usar recursos do ecossistema Windows/modding. Ele não deve ser tratado como uma configuração para servidor Linux nativo ou Windows puro. Ele reúne muitas variáveis úteis e já automatiza boa parte da instalação. Porém, a cópia original não deveria ser publicada sem tratamento: traz uma senha administrativa padrão (`ChangeMe123`), um e-mail no campo `author`, downloads flutuantes de `releases/latest` e uma opção de anti-cheat que o próprio projeto informa ser exclusiva para servidores Windows.
 
 A versão pública deste repositório é uma cópia revisada. O arquivo original não foi republicado.
 
