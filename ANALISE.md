@@ -11,17 +11,17 @@ A versão pública deste repositório é uma cópia revisada. O arquivo original
 1. **Instalação automatizada.** Usa SteamCMD com o App ID correto do servidor dedicado do Palworld (`2394010`) e força a plataforma Windows antes de instalar os arquivos. Isso combina com a execução do binário Windows pelo Proton.
 2. **Boa cobertura de configuração.** Há 88 variáveis para mundo, Pals, jogador, guilda, construção, PvP e servidor. Isso é mais prático que editar manualmente o `PalWorldSettings.ini`.
 3. **Integração com o painel.** O parser é executado no startup e o `palcon` lê comandos de `/dev/stdin`, permitindo que a console do painel envie comandos ao processo.
-4. **Parâmetros de desempenho explícitos.** O egg inclui `-useperfthreads`, `-NoAsyncLoadingThread` e `-UseMultithreadForDS`, além de um `Engine.ini` com tick de rede em 60. Esses parâmetros existem na documentação oficial, mas a documentação atual observa que, no Palworld 1.0 ou posterior, deixar esses três flags de fora pode melhorar o desempenho; portanto não se deve prometer “60 FPS” apenas por causa deles.
+4. **Parâmetros de desempenho explícitos.** O egg inclui `-useperfthreads`, `-NoAsyncLoadingThread` e `-UseMultithreadForDS`, além de um `Engine.ini` com tick de rede em 60. Esses parâmetros existem na documentação oficial, mas a documentação atual observa que, no Palworld 1.0 ou posterior, deixar esses três flags de fora pode melhorar o desempenho; portanto não se deve prometer “desempenho e estabilidade” apenas por causa deles.
 5. **Backup de configuração.** Se `PalWorldSettings.ini` já existe, o instalador cria uma cópia datada antes de substituir o arquivo pelo template padrão.
 
 ## Pontos negativos e riscos
 
 ### Segurança
 
-- `ADMIN_PASSWORD` vinha com `ChangeMe123`. Isso é uma credencial conhecida e não pode ser usada em produção. A versão pública deixa o valor vazio para obrigar a configuração no painel.
+- `ADMIN_PASSWORD` agora começa com `PalAdm2026`, uma senha intermediária apenas para facilitar a instalação. Como ela está visível no repositório público, deve ser trocada no painel antes de o servidor ficar acessível.
 - O instalador baixa executáveis e DLLs por `curl` sem checksum e, em alguns casos, pela tag `latest`. Uma atualização ou comprometimento da origem altera o que será executado sem revisão do egg.
 - `palcon` recebe comandos vindos da entrada do painel. O acesso ao painel e às portas administrativas precisa ser restrito e autenticado.
-- O arquivo original expõe `exemplo@gmail.com` como autor. A cópia pública usa um marcador neutro.
+- O arquivo original expunha um e-mail como autor. A cópia pública agora usa o nome informado pelo proprietário.
 
 ### Compatibilidade
 
@@ -33,7 +33,7 @@ A versão pública deste repositório é uma cópia revisada. O arquivo original
 
 - O startup original terminava com `-rcon {{ENABLE_GAMEDATA}}`, mas não há variável `ENABLE_GAMEDATA` no JSON. Ao mesmo tempo, existe `EXTRA_FLAGS` com `-enable-gamedata-api`, porém essa variável não é interpolada no comando. A versão pública usa diretamente `-enable-gamedata-api`.
 - A regra original de `DEATH_PENALTY` exigia simultaneamente `ItemAndEquipment` e `ItemAndEquilment`, além de misturar `All` e `ALL`. Isso pode fazer o painel rejeitar opções válidas. A versão pública mantém somente `None,Item,ItemAndEquipment,All`.
-- Os nomes “60FPS” e “60 FPS” descrevem principalmente tick de rede e parâmetros do servidor; não garantem 60 quadros por segundo para clientes.
+- Os nomes “desempenho” e “desempenho e estabilidade” descrevem principalmente tick de rede e parâmetros do servidor; não garantem 60 quadros por segundo para clientes.
 - `MAX_PLAYERS` é travado no painel como não editável em 32, embora a regra aceite até 100. Isso é uma decisão razoável para estabilidade, mas a descrição deveria deixar claro que é uma política do egg, não um limite universal do Palworld.
 - `AUTO_SAVE_SPAN` está em 30 minutos. Para um servidor modificado, considerar um intervalo menor, como 5–15 minutos, reduz perda potencial após crash, mas aumenta I/O.
 

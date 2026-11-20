@@ -5,10 +5,10 @@
         "update_url": "https://github.com/Alc2409/palworld-proton-modded-v2-egg"
     },
     "exported_at": "2026-11-20T02:41:19+00:00",
-    "name": "Palworld Proton Modded V2 - 60FPS",
-    "author": "redacted-for-public-release",
+    "name": "Palworld Proton Modded V2 - Performance",
+    "author": "Alcimar leal Do nascimento",
     "uuid": "7bcea6e4-a2bd-452d-bf1d-5f519faf5f1d",
-    "description": "Fight, farm, build and work alongside mysterious creatures called \"Pals\" in this completely new multiplayer, open world survival and crafting game! Revisado para publicação pública: senha administrativa deve ser definida pelo painel.",
+    "description": "Servidor dedicado Palworld para Linux com Proton, otimizado para estabilidade e desempenho. A senha administrativa padrão deve ser alterada antes de uso em produção.",
     "icon": null,
     "tags": [],
     "features": [
@@ -759,9 +759,9 @@
         },
         {
             "name": "[ Server ] Admin Password",
-            "description": "Senha usada para comandos administrativos e ferramentas RCON. Defina uma senha forte no painel; não deixe vazia em produção.",
+            "description": "Senha usada para comandos administrativos e ferramentas RCON. A senha inicial é intermediária e deve ser alterada antes de publicar o servidor.",
             "env_variable": "ADMIN_PASSWORD",
-            "default_value": "",
+            "default_value": "PalAdm2026",
             "user_viewable": true,
             "user_editable": true,
             "rules": [

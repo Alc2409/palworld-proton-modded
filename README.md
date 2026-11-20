@@ -1,4 +1,4 @@
-# Palworld Proton Modded V2 — 60 FPS
+# Palworld Proton Modded V2 — Performance
 
 Egg para Pelican/Pterodactyl que instala e executa o servidor dedicado do **Palworld para Windows** em um contêiner Linux usando Proton. O arquivo também prepara o `PalWorldSettings.ini`, instala o parser de configuração, habilita integração de console por `palcon`, instala `winmm.dll` para o ambiente modificado e pode instalar o PalDefender opcionalmente.
 
@@ -7,14 +7,14 @@ Egg para Pelican/Pterodactyl que instala e executa o servidor dedicado do **Palw
 - Instala o App ID `2394010` do SteamCMD usando `+@sSteamCmdForcePlatformType windows`.
 - Executa `PalServer-Win64-Shipping.exe` via Proton.
 - Expõe as variáveis de configuração do mundo, jogadores, guildas, construção e PvP no painel.
-- Cria `Engine.ini` com tick de rede em 60 e parâmetros de coleta de lixo ajustados.
+- Cria `Engine.ini` com tick de rede em 60 e parâmetros de coleta de lixo ajustados. O objetivo é reduzir sobrecarga e instabilidade, não prometer uma taxa fixa de quadros nos clientes.
 - Inicia o `palcon` em segundo plano para que a console do painel envie comandos ao servidor.
 - Habilita `-enable-gamedata-api` e configura a API REST conforme as variáveis do painel.
 - Inclui instalação opcional do PalDefender, mas ele deve ser tratado como incompatível com Linux/Proton até existir suporte confirmado.
 
 ## Arquivo
 
-Use [`egg-palworld-proton-modded-v2-60-fps-reviewed.json`](./egg-palworld-proton-modded-v2-60-fps-reviewed.json) para importar no painel. Esta cópia pública remove o e-mail do autor e não contém a senha administrativa padrão do arquivo original.
+Use [`egg-palworld-proton-modded-v2-performance-reviewed.json`](./egg-palworld-proton-modded-v2-performance-reviewed.json) para importar no painel. Esta cópia pública usa o nome do autor e contém a senha inicial intermediária `PalAdm2026`; altere-a antes de colocar o servidor em produção.
 
 ## Ajustes mais importantes
 
