@@ -21,7 +21,7 @@ A versão pública deste repositório é uma cópia revisada. O arquivo original
 - `ADMIN_PASSWORD` agora começa com `PalAdm2026`, uma senha intermediária apenas para facilitar a instalação. Como ela está visível no repositório público, deve ser trocada no painel antes de o servidor ficar acessível.
 - O instalador baixa executáveis e DLLs por `curl` sem checksum e, em alguns casos, pela tag `latest`. Uma atualização ou comprometimento da origem altera o que será executado sem revisão do egg.
 - `palcon` recebe comandos vindos da entrada do painel. O acesso ao painel e às portas administrativas precisa ser restrito e autenticado.
-- O arquivo original expunha um e-mail como autor. A cópia pública agora usa o nome informado pelo proprietário.
+- O arquivo original expunha um e-mail como autor. A cópia pública agora usa o nick GitHub `Alc2409`.
 
 ### Compatibilidade
 
